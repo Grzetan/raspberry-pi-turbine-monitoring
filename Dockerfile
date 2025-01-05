@@ -8,7 +8,7 @@ WORKDIR /app
 COPY requirements.txt .
 
 # Install the dependencies
-RUN apt-get install -y python3-rpi.gpio
+RUN apt-get update && apt-get install -y python3-dev gcc
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy the FastAPI app code into the container
