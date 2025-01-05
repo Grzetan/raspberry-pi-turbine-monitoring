@@ -3,11 +3,15 @@ import uvicorn
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
+import RPi.GPIO as GPIO
+
+GPIO.setmode(GPIO.BCM)
+GPIO.setup(17, GPIO.OUT)
+GPIO.setwarnings(False)
 
 app = FastAPI()
-
-
 app.mount("/static", StaticFiles(directory="static"), name="static")
+
 
 @app.get("/", response_class=HTMLResponse)
 def read_root():
@@ -18,9 +22,10 @@ def read_root():
 class TurbineStatus(BaseModel):
     enabled: bool
 
+
 @app.post("/api/turbine")
 def turbine(status: TurbineStatus):
-    print(status.enabled)
+    GPIO.output(17, GPIO.HIGH if status.enabled else GPIO.LOW)
     return {"status": "Turbine is enabled" if status.enabled else "Turbine is disabled"}
 
 

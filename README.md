@@ -11,13 +11,13 @@ This project uses FastAPI to monitor turbine data on a Raspberry Pi.
 1. Build the Docker image:
 
     ```sh
-    docker build -t turbine-monitoring .
+    sudo docker build -t turbine-monitoring .
     ```
 
 2. Run the Docker container:
 
     ```sh
-    docker run -d -p 8000:8000 turbine-monitoring
+    sudo docker run -p 8000:8000 turbine-monitoring
     ```
 
 3. Access the FastAPI application:
