@@ -1,17 +1,27 @@
 from fastapi import FastAPI
 import uvicorn
+from fastapi.responses import HTMLResponse
+from fastapi.staticfiles import StaticFiles
+from pydantic import BaseModel
 
 app = FastAPI()
 
 
-@app.get("/")
+app.mount("/static", StaticFiles(directory="static"), name="static")
+
+@app.get("/", response_class=HTMLResponse)
 def read_root():
-    return {"message": "Welcome to the Raspberry Pi Turbine Monitoring System"}
+    with open("static/index.html", "r") as file:
+        return file.read()
 
 
-@app.get("/status")
-def get_status():
-    return {"status": "All systems operational"}
+class TurbineStatus(BaseModel):
+    enabled: bool
+
+@app.post("/api/turbine")
+def turbine(status: TurbineStatus):
+    print(status.enabled)
+    return {"status": "Turbine is enabled" if status.enabled else "Turbine is disabled"}
 
 
 if __name__ == "__main__":

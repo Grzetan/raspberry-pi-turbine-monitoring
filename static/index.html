@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Turbine Monitoring</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            text-align: center;
+        }
+
+        .status {
+            margin-top: 20px;
+            font-size: 1.2em;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>Turbine Monitoring</h1>
+        <label for="turbineCheckbox">Enable Turbine</label>
+        <input type="checkbox" id="turbineCheckbox" onclick="toggleTurbine()">
+        <div class="status" id="status">Turbine is disabled</div>
+    </div>
+
+    <script>
+        async function toggleTurbine() {
+            const checkbox = document.getElementById('turbineCheckbox');
+            const status = document.getElementById('status');
+            const enabled = checkbox.checked;
+
+            status.textContent = enabled ? 'Turbine is enabled' : 'Turbine is disabled';
+
+            try {
+                const response = await fetch('/api/turbine', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ enabled })
+                });
+
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+            } catch (error) {
+                alert('There was a problem with the fetch operation:', error);
+            }
+        }
+    </script>
+</body>
+
+</html>
