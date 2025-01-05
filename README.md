@@ -1,0 +1,50 @@
+# Raspberry Pi Turbine Monitoring
+
+This project uses FastAPI to monitor turbine data on a Raspberry Pi.
+
+## Prerequisites
+
+- Docker installed on your Raspberry Pi
+
+## Running the Docker Image
+
+1. Build the Docker image:
+
+    ```sh
+    docker build -t turbine-monitoring .
+    ```
+
+2. Run the Docker container:
+
+    ```sh
+    docker run -d -p 8000:8000 turbine-monitoring
+    ```
+
+3. Access the FastAPI application:
+
+    Open your browser and go to `http://<your-raspberry-pi-ip>:8000`
+
+## API Documentation
+
+FastAPI provides interactive API documentation. You can access it at:
+
+- Swagger UI: `http://<your-raspberry-pi-ip>:8000/docs`
+- ReDoc: `http://<your-raspberry-pi-ip>:8000/redoc`
+
+## Stopping the Docker Container
+
+To stop the running container, use:
+
+```sh
+docker stop <container_id>
+```
+
+Replace `<container_id>` with the actual container ID, which you can find using:
+
+```sh
+docker ps
+```
+
+## License
+
+This project is licensed under the MIT License.
