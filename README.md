@@ -45,6 +45,5 @@ Replace `<container_id>` with the actual container ID, which you can find using:
 docker ps
 ```
 
-## License
-
-This project is licensed under the MIT License.
+## Setup WebRTC server on PI
+https://james-batchelor.com/index.php/2023/11/10/install-mediamtx-on-raspbian-bookworm/
