@@ -17,23 +17,30 @@ rpm = 0
 
 def gpio_callback(channel):
     global signal_count
-    global rpm
-    current_time = time.time()
     with counter_lock:
-        elapsed_time = current_time - starting_time
-        if elapsed_time >= timeframe:
-            rpm = signal_count / elapsed_time * 60
-            signal_count = 1
-            starting_time = time.time()
-        else:
-            signal_count += 1
+        signal_count += 1
 
+
+async def reset_metrics():
+    global signal_count
+    global rpm
+    global starting_time
+    while True:
+        await asyncio.sleep(timeframe)
+        with counter_lock:
+            elapsed_time = time.time() - starting_time
+            rpm = signal_count / elapsed_time * 60
+            signal_count = 0
+            starting_time = time.time()
+
+
+# Start the reset_metrics coroutine
+asyncio.create_task(reset_metrics())
 
 GPIO.setmode(GPIO.BCM)
 GPIO.setup(17, GPIO.OUT)
 GPIO.setup(27, GPIO.IN)
-GPIO.add_event_detect(27, GPIO.RISING, callback=gpio_callback, bouncetime=20)
-GPIO.setwarnings(False)
+GPIO.add_event_detect(27, GPIO.FALLING, callback=gpio_callback, bouncetime=20)
 
 app = FastAPI()
 app.mount("/static", StaticFiles(directory="static"), name="static")
@@ -57,6 +64,7 @@ def turbine(status: TurbineStatus):
 
 @app.websocket("/get_stats")
 async def stats(websocket: WebSocket):
+    websocket.accept()
     while True:
         await websocket.send_json({"rpm": rpm})
         await asyncio.sleep(timeframe)
