@@ -37,6 +37,7 @@
         <label for="turbineCheckbox">Enable Turbine</label>
         <input type="checkbox" id="turbineCheckbox" onclick="toggleTurbine()">
         <div class="status" id="status">Turbine is disabled</div>
+        <div id="turbone-rpm"></div>
         <iframe id="turbineFrame"></iframe>
     </div>
 
@@ -73,6 +74,27 @@
         }
 
         window.onload = setIframeSrc;
+
+        const socket = new WebSocket('ws://' + window.location.host + '/get_stats');
+
+        socket.onopen = function(event) {
+            console.log('WebSocket is connected.');
+        };
+
+        socket.onmessage = function(event) {
+            const data = JSON.parse(event.data);
+            if (data.rpm !== undefined) {
+                document.getElementById('turbine-rpm').textContent = 'Current RPM: ' + data.rpm;
+            }
+        };
+
+        socket.onclose = function(event) {
+            console.log('WebSocket is closed.');
+        };
+
+        socket.onerror = function(error) {
+            console.error('WebSocket error:', error);
+        };
     </script>
 </body>
 
