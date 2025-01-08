@@ -24,26 +24,5 @@ This project uses FastAPI to monitor turbine data on a Raspberry Pi.
 
     Open your browser and go to `http://<your-raspberry-pi-ip>:8000`
 
-## API Documentation
-
-FastAPI provides interactive API documentation. You can access it at:
-
-- Swagger UI: `http://<your-raspberry-pi-ip>:8000/docs`
-- ReDoc: `http://<your-raspberry-pi-ip>:8000/redoc`
-
-## Stopping the Docker Container
-
-To stop the running container, use:
-
-```sh
-docker stop <container_id>
-```
-
-Replace `<container_id>` with the actual container ID, which you can find using:
-
-```sh
-docker ps
-```
-
 ## Setup WebRTC server on PI
 https://james-batchelor.com/index.php/2023/11/10/install-mediamtx-on-raspbian-bookworm/

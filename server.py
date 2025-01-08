@@ -64,7 +64,7 @@ def turbine(status: TurbineStatus):
 
 @app.websocket("/get_stats")
 async def stats(websocket: WebSocket):
-    websocket.accept()
+    await websocket.accept()
     while True:
         await websocket.send_json({"rpm": rpm})
         await asyncio.sleep(timeframe)
