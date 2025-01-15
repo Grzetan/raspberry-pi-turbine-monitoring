@@ -6,6 +6,13 @@ __pycache__/
 # C extensions
 *.so
 
+*.cmake
+CMakeCache.txt
+Makefile
+visualTachometer
+CMakeFiles/
+.vscode
+
 # Distribution / packaging
 .Python
 build/

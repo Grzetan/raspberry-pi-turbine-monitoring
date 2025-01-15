@@ -26,3 +26,18 @@ This project uses FastAPI to monitor turbine data on a Raspberry Pi.
 
 ## Setup WebRTC server on PI
 https://james-batchelor.com/index.php/2023/11/10/install-mediamtx-on-raspbian-bookworm/
+
+# To install right version of openCV:
+
+git clone https://github.com/opencv/opencv.git
+cd opencv
+mkdir build
+cd build
+cmake -D CMAKE_BUILD_TYPE=Release \
+      -D CMAKE_INSTALL_PREFIX=/usr/local \
+      -D WITH_FFMPEG=ON \
+      -D BUILD_EXAMPLES=ON \
+      -D BUILD_opencv_python3=OFF ..
+make -j$(nproc)
+sudo make install
+sudo ldconfig
