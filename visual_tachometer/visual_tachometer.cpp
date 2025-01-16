@@ -2,7 +2,7 @@
 #include <iostream>
 #include <thread>
 
-#define DEBUG true
+#define DEBUG false
 #define VIDEO true
 #define MAX_QUEUE_SIZE 5
 #define CLOCKWISE false
@@ -73,7 +73,7 @@ double calulate_rpm(const std::deque<std::pair<double, std::chrono::_V2::steady_
 
 int main(int argc, char **argv)
 {
-    cv::VideoCapture cap("/home/grzetan/Projects/raspberry-pi-turbine-monitoring/videos/1.mp4");
+    cv::VideoCapture cap("./videos/1.mp4");
 
     if (!cap.isOpened())
     {
@@ -167,10 +167,12 @@ int main(int argc, char **argv)
         # endif
     }
 
+    # if DEBUG
     auto end = std::chrono::high_resolution_clock::now();
     std::chrono::duration<double> elapsed = end - start;
     double calulated_fps = frame_count / elapsed.count();
     std::cout << "FPS: " << calulated_fps << std::endl;
+    # endif
 
     cap.release();
     cv::destroyAllWindows();

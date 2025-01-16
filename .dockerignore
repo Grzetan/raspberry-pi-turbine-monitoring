@@ -1,0 +1,6 @@
+*.cmake
+CMakeCache.txt
+Makefile
+visualTachometer
+CMakeFiles
+.vscode
