@@ -3,7 +3,8 @@ import uvicorn
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
-import RPi.GPIO as GPIO
+
+# import RPi.GPIO as GPIO
 from threading import Lock
 import time
 import asyncio
@@ -12,7 +13,15 @@ signal_count = 0
 counter_lock = Lock()
 timeframe = 5
 starting_time = time.time()
-rpm = 0
+hall_rpm = 0
+visual_rpm = 0
+
+
+def read_from_fifo():
+    global visual_rpm
+    with open("/tmp/visual_tachometer_fifo", "r") as file:
+        visual_rpm = float(file.read())
+        print(visual_rpm)
 
 
 def gpio_callback(channel):
@@ -23,24 +32,25 @@ def gpio_callback(channel):
 
 async def reset_metrics():
     global signal_count
-    global rpm
+    global hall_rpm
     global starting_time
     while True:
         await asyncio.sleep(timeframe)
         with counter_lock:
             elapsed_time = time.time() - starting_time
-            rpm = signal_count / elapsed_time * 60
+            hall_rpm = signal_count / elapsed_time * 60
             signal_count = 0
             starting_time = time.time()
+        read_from_fifo()
 
 
 # Start the reset_metrics coroutine
 asyncio.create_task(reset_metrics())
 
-GPIO.setmode(GPIO.BCM)
-GPIO.setup(17, GPIO.OUT)
-GPIO.setup(27, GPIO.IN)
-GPIO.add_event_detect(27, GPIO.FALLING, callback=gpio_callback, bouncetime=20)
+# GPIO.setmode(GPIO.BCM)
+# GPIO.setup(17, GPIO.OUT)
+# GPIO.setup(27, GPIO.IN)
+# GPIO.add_event_detect(27, GPIO.FALLING, callback=gpio_callback, bouncetime=20)
 
 app = FastAPI()
 app.mount("/static", StaticFiles(directory="static"), name="static")
@@ -58,15 +68,17 @@ class TurbineStatus(BaseModel):
 
 @app.post("/api/turbine")
 def turbine(status: TurbineStatus):
-    GPIO.output(17, GPIO.HIGH if status.enabled else GPIO.LOW)
-    return {"status": "Turbine is enabled" if status.enabled else "Turbine is disabled"}
+    # GPIO.output(17, GPIO.HIGH if status.enabled else GPIO.LOW)
+    return {
+        "status": "Turbine is enabled"
+    }  # if status.enabled else "Turbine is disabled"}
 
 
 @app.websocket("/get_stats")
 async def stats(websocket: WebSocket):
     await websocket.accept()
     while True:
-        await websocket.send_json({"rpm": rpm})
+        await websocket.send_json({"hall_rpm": hall_rpm})
         await asyncio.sleep(timeframe)
 
 

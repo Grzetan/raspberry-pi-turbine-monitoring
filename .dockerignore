@@ -1,6 +1,4 @@
-*.cmake
-CMakeCache.txt
-Makefile
-visualTachometer
-CMakeFiles
-.vscode
+visual_tachometer/CMakeCache.txt
+visual_tachometer/CMakeFiles
+visual_tachometer/Makefile
+visual_tachometer/*.cmake

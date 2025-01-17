@@ -1,11 +1,19 @@
 #include <opencv2/opencv.hpp>
 #include <iostream>
 #include <thread>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fstream>
+#include "argparse.hpp"
+
 
 #define DEBUG false
-#define VIDEO true
-#define MAX_QUEUE_SIZE 5
-#define CLOCKWISE false
+
+std::string fifo_path = "/tmp/visual_tachometer_fifo";
+bool VIDEO = true;
+bool CLOCKWISE = false;
+int MAX_QUEUE_SIZE = 5;
+
 
 void fill_circle_pixels(std::vector<cv::Point3d>& pixels, const cv::Point2d& center, float inner_radius, float outer_radius, const cv::Point2d& frame_size){
     float diagonal = 2 * inner_radius;
@@ -71,14 +79,79 @@ double calulate_rpm(const std::deque<std::pair<double, std::chrono::_V2::steady_
     return (sum / 360.0) / (time_diff / 60000);
 }
 
+bool create_fifo(const std::string& fifo_path){
+    if (mkfifo(fifo_path.c_str(), 0666) == -1 && errno != EEXIST) {
+        std::cerr << "Error: Could not create FIFO." << std::endl;
+        return false;
+    }
+    return true;
+}
+
+bool write_to_fifo(std::ofstream& fifo_out, double rpm){
+    fifo_out << rpm << "\n";
+    fifo_out.flush();
+     if (fifo_out.fail()) {
+        std::cerr << "Error writing to FIFO." << std::endl;
+        fifo_out.close();
+        return false;
+    }
+    return true;
+}
+
 int main(int argc, char **argv)
 {
-    cv::VideoCapture cap("./videos/1.mp4");
+    argparse::ArgumentParser args("Turbine Monitoring");
 
-    if (!cap.isOpened())
-    {
-        std::cerr << "Error: Could not open video file" << std::endl;
+    args.add_argument("--webcam_index")
+        .help("Path to video")
+        .scan<'i', int>();
+
+    args.add_argument("--video_path")
+        .help("Path to video");
+
+    args.add_argument("--clockwise")
+        .help("Pass if turbine is rotating clockwise")
+        .default_value(false)
+        .implicit_value(true);
+    
+    try {
+        args.parse_args(argc, argv);
+    } catch (const std::runtime_error& err) {
+        std::cerr << err.what() << std::endl;
+        std::cerr << args;
+        std::exit(1);
+    }
+    
+    bool is_webcam = args.present("--webcam_index").has_value();
+    bool is_video = args.present("--video_path").has_value();
+    if(is_webcam == is_video){
+        std::cerr << "Error: Please provide either video path or webcam index" << std::endl;
+        std::cerr << args;
+        std::exit(1);
+    }
+
+    VIDEO = is_video;
+    CLOCKWISE = args.get<bool>("--clockwise");
+
+    cv::VideoCapture cap;
+    if(is_video){
+        cap.open(args.get<std::string>("--video_path"));
+    }else{
+        cap.open(args.get<int>("--webcam_index"));
+    }
+
+    if (!cap.isOpened()){
+        std::cerr << "Error: Could not open video capture." << std::endl;
         return -1;
+    }
+
+    if(!create_fifo(fifo_path)){
+        return -1;
+    }
+    std::ofstream fifo_out(fifo_path, std::ios::out);
+    if (!fifo_out.is_open()) {
+        std::cerr << "Error opening FIFO for writing." << std::endl;
+        return 1;
     }
 
     # if VIDEO
@@ -91,12 +164,6 @@ int main(int argc, char **argv)
     cv::Point2d frame_size(1280, 720);
     int innerRadius = 700;
     int outerRadius = innerRadius + 100;
-
-    // cv::Point2d center(400, 400);
-    // cv::Point2d frame_size(1280, 720);
-    // int innerRadius = 200;
-    // int outerRadius = innerRadius + 100;
-
     std::vector<cv::Point3d> pixels;
     fill_circle_pixels(pixels, center, innerRadius, outerRadius, frame_size);
 
@@ -157,7 +224,9 @@ int main(int argc, char **argv)
             positions.push_back(std::make_pair(angle, current_time));
 
             double rpm = calulate_rpm(positions);
-            std::cout << "RPM: " << rpm << std::endl;
+            if(!write_to_fifo(fifo_out, rpm)){
+                break;
+            }
         }
 
         # if DEBUG
@@ -174,7 +243,10 @@ int main(int argc, char **argv)
     std::cout << "FPS: " << calulated_fps << std::endl;
     # endif
 
+    fifo_out.close();
     cap.release();
+    # if DEBUG
     cv::destroyAllWindows();
+    # endif
     return 0;
 }
