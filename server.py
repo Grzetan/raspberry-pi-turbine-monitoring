@@ -7,52 +7,81 @@ from pin_manager import PinManager
 from threading import Lock
 import time
 import asyncio
+import os
+import RPi.GPIO as GPIO
 
-signal_count = 0
+hall_signal_count = 0
+device_signal_count = 1
 counter_lock = Lock()
+device_lock = Lock()
 timeframe = 5
 starting_time = time.time()
 hall_rpm = 0
-visual_rpm = 0
+device_rpm = 0
 
 
 manager = PinManager()
 
 
-def read_from_fifo():
-    global visual_rpm
-    with open("/tmp/visual_tachometer_fifo", "r") as file:
-        visual_rpm = float(file.read())
-        print(visual_rpm)
+# def read_from_fifo():
+#     global visual_rpm
+#     with open("/tmp/visual_tachometer_fifo", "r") as file:
+#         visual_rpm = float(file.read())
+#         print(visual_rpm)
 
 
-def gpio_callback(channel):
-    global signal_count
+def hall_gpio_callback(channel):
+    global hall_signal_count
     with counter_lock:
-        signal_count += 1
+        hall_signal_count += 1
+
+
+def device_gpio_callback(channel):
+    global device_signal_count
+    with device_lock:
+        device_signal_count += 1
 
 
 async def reset_metrics():
-    global signal_count
+    global hall_signal_count
+    global device_signal_count
     global hall_rpm
+    global device_rpm
     global starting_time
+
+    folder_path = "./calc/"
+    files = os.listdir(folder_path)
+    file_count = len(files)
+    output_file = f"{folder_path}{file_count}.csv"
+    with open(output_file, "w") as f:
+        f.write("Time, Hall RPM, Device RPM\n")
+
     while True:
         await asyncio.sleep(timeframe)
         with counter_lock:
             elapsed_time = time.time() - starting_time
-            hall_rpm = signal_count / elapsed_time * 60
-            signal_count = 0
-            starting_time = time.time()
-        read_from_fifo()
+            hall_rpm = hall_signal_count / elapsed_time * 60
+            hall_signal_count = 0
+        with device_lock:
+            elapsed_time = time.time() - starting_time
+            device_rpm = device_signal_count / elapsed_time * 60
+            device_signal_count = 0
+
+        print(time.time(), hall_rpm, device_rpm)
+        with open(output_file, "a") as f:
+            f.write(f"{time.time()}, {hall_rpm}, {device_rpm}\n")
+        starting_time = time.time()
+        # read_from_fifo()
 
 
 # Start the reset_metrics coroutine
 asyncio.create_task(reset_metrics())
 
-# GPIO.setmode(GPIO.BCM)
-# GPIO.setup(17, GPIO.OUT)
-# GPIO.setup(27, GPIO.IN)
-# GPIO.add_event_detect(27, GPIO.FALLING, callback=gpio_callback, bouncetime=20)
+GPIO.setmode(GPIO.BCM)
+GPIO.setup(24, GPIO.IN)
+GPIO.setup(25, GPIO.IN)
+GPIO.add_event_detect(24, GPIO.FALLING, callback=hall_gpio_callback, bouncetime=20)
+GPIO.add_event_detect(25, GPIO.FALLING, callback=device_gpio_callback, bouncetime=20)
 
 app = FastAPI()
 app.mount("/static", StaticFiles(directory="static"), name="static")

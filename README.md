@@ -17,7 +17,7 @@ This project uses FastAPI to monitor turbine data on a Raspberry Pi.
 2. Run the Docker container:
 
     ```sh
-    sudo docker run --privileged -v /sys/class/gpio:/sys/class/gpio -v /dev/gpiomem:/dev/gpiomem -p 8000:8000 turbine-monitoring    
+    sudo docker run --privileged -v /sys/class/gpio:/sys/class/gpio -v /dev/gpiomem:/dev/gpiomem -v ./calc:/app/calc -p 8000:8000 turbine-monitoring    
     ```
 
 3. Access the FastAPI application:
