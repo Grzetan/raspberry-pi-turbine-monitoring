@@ -3,8 +3,7 @@ import uvicorn
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
-
-# import RPi.GPIO as GPIO
+from pin_manager import PinManager
 from threading import Lock
 import time
 import asyncio
@@ -15,6 +14,9 @@ timeframe = 5
 starting_time = time.time()
 hall_rpm = 0
 visual_rpm = 0
+
+
+manager = PinManager()
 
 
 def read_from_fifo():
@@ -62,16 +64,34 @@ def read_root():
         return file.read()
 
 
-class TurbineStatus(BaseModel):
+class Status(BaseModel):
     enabled: bool
 
 
-@app.post("/api/turbine")
-def turbine(status: TurbineStatus):
-    # GPIO.output(17, GPIO.HIGH if status.enabled else GPIO.LOW)
-    return {
-        "status": "Turbine is enabled"
-    }  # if status.enabled else "Turbine is disabled"}
+@app.post("/api/pump")
+def pump(status: Status):
+    manager.active_pump(status.enabled)
+    return {"status": "SUCCESS"}
+
+
+@app.post("/api/small_valve")
+def small_valve(status: Status):
+    manager.active_small_valve(status.enabled)
+    return {"status": "SUCCESS"}
+
+
+class PercentageStatus(BaseModel):
+    enabled: bool
+    percentage: float
+
+
+@app.post("/api/big_valve")
+async def big_valve(status: PercentageStatus):
+    try:
+        await manager.change_big_valve(status.percentage, status.enabled)
+    except ValueError as e:
+        return {"status": "ERROR", "message": str(e)}
+    return {"status": "SUCCESS"}
 
 
 @app.websocket("/get_stats")

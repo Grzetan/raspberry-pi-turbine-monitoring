@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Turbine Monitoring</title>
+    <title>pump Monitoring</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -34,23 +34,32 @@
 <body>
     <div class="container">
         <h1>Turbine Monitoring</h1>
-        <label for="turbineCheckbox">Enable Turbine</label>
-        <input type="checkbox" id="turbineCheckbox" onclick="toggleTurbine()">
-        <div class="status" id="status">Turbine is disabled</div>
-        <div id="turbine-rpm"></div>
+        <label for="pumpCheckbox">Enable Pump</label>
+        <input type="checkbox" id="pumpCheckbox" onclick="togglePump()">
+        <div class="status" id="status">Pump is disabled</div>
+        <input type="checkbox" id="smallValveCheckbox" onclick="toggleSmallValve()">
+        <div class="status" id="smallvalvestatus">small valve is disabled</div>
+        <div>
+            <label for="bigValvePercentage">Big Valve Percentage:</label>
+            <input type="number" id="bigValvePercentage" min="0" max="1" step="0.1" value="0">
+            <label for="bigValveCheckbox">Enable Big Valve</label>
+            <input type="checkbox" id="bigValveCheckbox" onclick="toggleBigValve()">
+            <div class="status" id="bigvalvestatus">big valve is disabled</div>
+        </div>
+        <div id="turbnne-rpm"></div>
         <iframe id="turbineFrame"></iframe>
     </div>
 
     <script>
-        async function toggleTurbine() {
-            const checkbox = document.getElementById('turbineCheckbox');
+        async function togglePump() {
+            const checkbox = document.getElementById('pumpCheckbox');
             const status = document.getElementById('status');
             const enabled = checkbox.checked;
 
-            status.textContent = enabled ? 'Turbine is enabled' : 'Turbine is disabled';
+            status.textContent = enabled ? 'pump is enabled' : 'pump is disabled';
 
             try {
-                const response = await fetch('/api/turbine', {
+                const response = await fetch('/api/pump', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
@@ -66,8 +75,57 @@
             }
         }
 
+        async function toggleSmallValve() {
+            const checkbox = document.getElementById('smallValveCheckbox');
+            const status = document.getElementById('smallvalvestatus');
+            const enabled = checkbox.checked;
+
+            status.textContent = enabled ? 'small valve is enabled' : 'small valve is disabled';
+
+            try {
+                const response = await fetch('/api/small_valve', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ enabled })
+                });
+
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+            } catch (error) {
+                alert('There was a problem with the fetch operation:', error);
+            }
+        }
+
+        async function toggleBigValve() {
+            const checkbox = document.getElementById('bigValveCheckbox');
+            const percentage = document.getElementById('bigValvePercentage').value;
+            const status = document.getElementById('bigvalvestatus');
+            const enabled = checkbox.checked;
+
+            status.textContent = enabled ? 'big valve is enabled' : 'big valve is disabled';
+
+            try {
+                const response = await fetch('/api/big_valve', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ enabled, percentage: parseFloat(percentage) })
+                });
+
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+            } catch (error) {
+                alert('There was a problem with the fetch operation:', error);
+            }
+        }
+
         function setIframeSrc() {
-            const iframe = document.getElementById('turbineFrame');
+            const iframe = document.getElementById('pumpFrame');
             const host = window.location.hostname;
             const port = 8889;
             iframe.src = `http://${host}:${port}/cam`;
@@ -84,7 +142,7 @@
         socket.onmessage = function(event) {
             const data = JSON.parse(event.data);
             if (data.rpm !== undefined) {
-                document.getElementById('turbine-rpm').textContent = 'Current RPM: ' + data.rpm;
+                document.getElementById('pump-rpm').textContent = 'Current RPM: ' + data.rpm;
             }
         };
 
