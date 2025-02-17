@@ -17,7 +17,7 @@ device_lock = Lock()
 timeframe = 5
 starting_time = time.time()
 hall_rpm = 0
-device_rpm = 0
+device_l_per_h = 0
 
 
 manager = PinManager()
@@ -46,7 +46,7 @@ async def reset_metrics():
     global hall_signal_count
     global device_signal_count
     global hall_rpm
-    global device_rpm
+    global device_l_per_h
     global starting_time
 
     folder_path = "./calc/"
@@ -54,7 +54,7 @@ async def reset_metrics():
     file_count = len(files)
     output_file = f"{folder_path}{file_count}.csv"
     with open(output_file, "w") as f:
-        f.write("Time, Hall RPM, Device RPM\n")
+        f.write("Time, Hall RPM, Przeplywomiez L/h, Big Valve status\n")
 
     while True:
         await asyncio.sleep(timeframe)
@@ -64,12 +64,14 @@ async def reset_metrics():
             hall_signal_count = 0
         with device_lock:
             elapsed_time = time.time() - starting_time
-            device_rpm = device_signal_count / elapsed_time * 60
+            device_l_per_h = ((device_signal_count / timeframe) * 60.0) / 7.5
             device_signal_count = 0
 
-        print(time.time(), hall_rpm, device_rpm)
+        print(time.time(), hall_rpm, device_l_per_h, manager.get_big_valve_status())
         with open(output_file, "a") as f:
-            f.write(f"{time.time()}, {hall_rpm}, {device_rpm}\n")
+            f.write(
+                f"{int(time.time())}, {hall_rpm}, {device_l_per_h}, {manager.get_big_valve_status()}\n"
+            )
         starting_time = time.time()
         # read_from_fifo()
 

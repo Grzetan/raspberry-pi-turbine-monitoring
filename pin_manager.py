@@ -49,6 +49,7 @@ class BigValve(Device):
     def __init__(self, pins: tuple[int, int], epsilon: float = 16):
         self.pins = pins
         self.epsilon = epsilon
+        self.opened = 0.0
         for pin in self.pins:
             pass
             GPIO.setup(pin, GPIO.OUT)
@@ -73,6 +74,7 @@ class BigValve(Device):
         if percentage < 0 or percentage > 100:
             raise ValueError("Percentage should be between 0 and 100")
 
+        self.opened = percentage
         open_time = self.epsilon * percentage / 100
         self.turnon()
         await asyncio.sleep(open_time)
@@ -82,6 +84,7 @@ class BigValve(Device):
         if percentage < 0 or percentage > 100:
             raise ValueError("Percentage should be between 0 and 100")
 
+        self.opened = 100 - percentage
         open_time = self.epsilon * percentage / 100
         self.turnoff()
         await asyncio.sleep(open_time)
@@ -116,3 +119,6 @@ class PinManager:
             await self.big_valve.open(percentage)
         else:
             await self.big_valve.close(percentage)
+
+    def get_big_valve_status(self):
+        return self.big_valve.opened
